@@ -6,6 +6,8 @@ This script loading failure usually happens because of strict network firewalls,
 Feature: geospatial filtering
 Steps:
 - A map, tile layer, and markers
-- Data as an array of objects
-- A distance calculation (haversine)
-- Conditional filtering based on that calculation
+- Data-driven rendering from an array
+- Distance calculation (haversine)
+- Filtering (if)
+- Sorting (.sort())
+- A synced list + map view
