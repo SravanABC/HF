@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Exit Ahead - Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <div id="map" style="height: 500px;"></div>
+    <script>
+        const map = L.map('map').setView([33.749, -84.388], 12);
+        const driver = { lat: 33.75, lng: -84.39 };
+        const maxDistance = 2; // miles
+
+        L.marker([driver.lat, driver.lng])
+            .addTo(map)
+            .bindPopup('You are here')
+            .openPopup();
+
+        function distanceMiles(lat1, lng1, lat2, lng2) {
+            const R = 3958.8; // Earth's radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) ** 2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        const restaurants = [
+            { name: 'Sunrise Biscuit Co.', lat: 33.76, lng: -84.39, offer: 'Free hash browns over $8' },
+            { name: 'Peach Pit Burgers', lat: 33.74, lng: -84.36, offer: '2-for-1 fries after 2pm' },
+            { name: 'Saigon Corner', lat: 33.77, lng: -84.41, offer: '10% off banh mi' }
+        ];
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        restaurants.forEach(function (r) {
+            const dist = distanceMiles(driver.lat, driver.lng, r.lat, r.lng);
+            if (dist <= maxDistance) {
+                L.marker([r.lat, r.lng])
+                    .addTo(map)
+                    .bindPopup('<b>' + r.name + '</b><br>' + r.offer + '<br>' + dist.toFixed(1) + ' mi away');
+            }
+        });
+    </script>
+</body>
+
+</html>
