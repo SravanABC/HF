@@ -14,23 +14,11 @@
     <script>
         const map = L.map('map').setView([33.749, -84.388], 12);
         const driver = { lat: 33.75, lng: -84.39 };
-        const maxDistance = 2; // miles
 
         L.marker([driver.lat, driver.lng])
             .addTo(map)
             .bindPopup('You are here')
             .openPopup();
-
-        function distanceMiles(lat1, lng1, lat2, lng2) {
-            const R = 3958.8; // Earth's radius in miles
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLng = (lng2 - lng1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng / 2) ** 2;
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
 
         //fetch, then handle the response (calling an external API, handling an async response, parsing nested JSON, and transforming coordinates to draw a real road path)
 
@@ -38,8 +26,6 @@
             const url = 'https://router.project-osrm.org/route/v1/driving/'
                 + from.lng + ',' + from.lat + ';' + to.lng + ',' + to.lat
                 + '?overview=full&geometries=geojson';
-
-            https://router.project-osrm.org/route/v1/driving/-84.39%20,%2033.75;-84.39%20,%2033.76?overview=full&geometries=geojson
 
             fetch(url)
                 .then(function (response) {
@@ -54,38 +40,29 @@
                 });
         }
 
-        const restaurants = [
-            { name: 'Sunrise Biscuit Co.', lat: 33.76, lng: -84.39, offer: 'Free hash browns over $8' },
-            { name: 'Peach Pit Burgers', lat: 33.74, lng: -84.36, offer: '2-for-1 fries after 2pm' },
-            { name: 'Saigon Corner', lat: 33.77, lng: -84.41, offer: '10% off banh mi' }
-        ];
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        restaurants.forEach(function (r) {
-            r.dist = distanceMiles(driver.lat, driver.lng, r.lat, r.lng);
-        });
-
-        restaurants.sort(function (a, b) {
-            return a.dist - b.dist;
-        });
-
-        drawRoute(driver, restaurants[0]);
-
         const listE1 = document.getElementById('restaurant-list');
 
-        restaurants.forEach(function (r, index) {
-            if (r.dist <= maxDistance) {
-                L.marker([r.lat, r.lng])
-                    .addTo(map)
-                    .bindPopup('<b>' + r.name + '</b><br>' + r.offer + '<br>' + r.dist.toFixed(1) + ' mi away');
+        fetch('http://127.0.0.1:8000/restaurants?lat=' + driver.lat + '&lng=' + driver.lng)
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (restaurants) {
+                restaurants.forEach(function (r, index) {
+                    L.marker([r.lat, r.lng])
+                        .addTo(map)
+                        .bindPopup('<b>' + r.name + '</b><br>' + r.offer + '<br>' + r.dist.toFixed(1) + ' mi away');
 
-                const li = document.createElement('li');
-                li.textContent = (index + 1) + '. ' + r.name + ' - ' + r.dist.toFixed(1) + 'mi - ' + r.offer;
-                listE1.appendChild(li);
-            }
-        });
+                    const li = document.createElement('li');
+                    li.textContent = (index + 1) + '. ' + r.name + ' - ' + r.dist.toFixed(1) + ' mi - ' + r.offer;
+                    listE1.appendChild(li);
+                });
+
+                drawRoute(driver, restaurants[0]);
+            });
     </script>
 </body>
 
