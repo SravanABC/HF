@@ -1,6 +1,7 @@
 import math
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+import sqlite3
 
 app = FastAPI()
 app.add_middleware(
@@ -26,11 +27,17 @@ def distance_miles(lat1, lng1, lat2, lng2):
 
 @app.get("/restaurants")
 def get_restaurants(lat: float, lng: float):
-    restaurants = [
-        {"name": "Sunrise Biscuit Co.", "lat": 33.76, "lng": -84.39, "offer": "Free hash browns over $8"},
-        {"name": "Peach pit Burgers", "lat": 33.74, "lng": -84.36, "offer": "2-for-1 fries after 2PM"},
-        {"name": "Sunrise Biscuit Co.", "lat": 33.77, "lng": -84.41, "offer": "10% off banh mi"}
-    ]
+    # restaurants = [
+    #     {"name": "Sunrise Biscuit Co.", "lat": 33.76, "lng": -84.39, "offer": "Free hash browns over $8"},
+    #     {"name": "Peach pit Burgers", "lat": 33.74, "lng": -84.36, "offer": "2-for-1 fries after 2PM"},
+    #     {"name": "Sunrise Biscuit Co.", "lat": 33.77, "lng": -84.41, "offer": "10% off banh mi"}
+    # ]
+    conn = sqlite3.connect("restaurants.db")
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute("SELECT name, lat, lng, offer FROM restaurants").fetchall()
+    conn.close()
+
+    restaurants = [dict(row) for row in rows]
 
     for r in restaurants:
         r["dist"] = distance_miles(lat, lng, r["lat"], r["lng"])
