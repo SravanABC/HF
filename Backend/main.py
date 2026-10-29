@@ -2,6 +2,14 @@ import math
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 import sqlite3
+from pydantic import BaseModel
+from fastapi import HTTPException
+
+class RestaurantIn(BaseModel):
+    name: str
+    lat: float
+    lng: float
+    offer: str | None = None
 
 app = FastAPI()
 app.add_middleware(
@@ -10,6 +18,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.post("/restaurants")
+def add_restaurant(r: RestaurantIn):
+    conn = sqlite3.connect("restaurants.db")
+    cur = conn.execute(
+        "INSERT INTO restaurants (name, lat, lng, offer) VALUES (?, ?, ?, ?)",
+        (r.name, r.lat, r.lng, r.offer)
+    )
+    conn.commit()
+    new_id = cur.lastrowid
+    conn.close()
+    return {"id": new_id, "name": r.name}
+
+@app.delete("/restaurants/{restaurant_id}")
+def delete_restaurant(restaurant_id: int):
+    conn = sqlite3.connect("restaurants.db")
+    cur = conn.execute("DELETE FROM restaurants WHERE id = ?", (restaurant_id,))
+    conn.commit()
+    deleted = cur.rowcount
+    conn.close()
+
+    if deleted == 0:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    return {"deleted": restaurant_id}
 
 @app.get("/")
 def read_root():
@@ -34,7 +66,7 @@ def get_restaurants(lat: float, lng: float):
     # ]
     conn = sqlite3.connect("restaurants.db")
     conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT name, lat, lng, offer FROM restaurants").fetchall()
+    rows = conn.execute("SELECT id, name, lat, lng, offer FROM restaurants").fetchall()
     conn.close()
 
     restaurants = [dict(row) for row in rows]
